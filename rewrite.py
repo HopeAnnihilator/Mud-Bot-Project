@@ -177,6 +177,7 @@ async def receive_info():
     await receive_info()
                 
 async def send_secret():
+    global secret
     if secret:
         kudo = secret + '\r\n'
         s.send(kudo.encode())
