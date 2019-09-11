@@ -12,6 +12,7 @@ global channels
 global whitelist
 global running 
 global claimed, claim_user, claim_channel, allowed_users
+global path
 
 
 client = commands.Bot(command_prefix = '')
@@ -56,17 +57,25 @@ async def on_message(message):
                 await message.channel.send('Please insert a channel name')
         elif "claim" == work_with[1]:
             if str(type(message.channel)) == "<class 'discord.channel.TextChannel'>":
+                chin_channel = str(message.channel).split('-')
                 global claimed, claim_user, claim_channel, da_channel
                 if claimed and message.author.id != claim_user:
                     await message.channel.send('The bot is already claimed')
+                    return
                 elif claimed and message.author.id == claim_user:
                     await message.channel.send('You already have a claim')
-                else:
-                    claim_channel = message.channel.id
-                    await message.author.send('Please message the target server in the form ```target.server:port```')
-                    claim_user = message.author.id
-                    claimed = True
-                    da_channel = message.channel
+                    return
+                try:
+                    if str(message.author.id) == chin_channel[1]:
+                        claim_channel = message.channel.id
+                        await message.author.send('Please message the target server in the form ```target.server:port```')
+                        claim_user = message.author.id
+                        claimed = True
+                        da_channel = message.channel
+                    else:
+                        await message.channel.send('You cannot claim this channel, please create your own')
+                except IndexError:
+                    await message.channel.send('You cannot claim this channel, please create your own')
             else:
                 await message.channel.send('Cannot claim this channel')
         elif "remove" == work_with[1] and str(type(message.channel)) == "<class 'discord.channel.TextChannel'>":
@@ -112,6 +121,9 @@ async def on_message(message):
                     await message.channe.send('Unable to remove ' + str(message.mentions)[12:30])
             else:
                 await message.channel.send('Please mention a user')
+        elif "path" == work_with[1] and (message.author.id == claim_user or str(message.author.id) in allowed_users) and running:
+            await send_path()
+
     elif str(type(message.channel)).lower() == "<class 'discord.channel.dmchannel'>" and message.author.id != bot_id:
         if message.author.id == claim_user:
             work_with = message.content.lower().split(':')
@@ -125,6 +137,13 @@ async def on_message(message):
                         await message.channel.send("Please add a secret")
                 else:
                     await message.channel.send("Please add a secret")
+            elif work_with[0] == "path":
+                try:
+                    global da_path
+                    da_path = work_with[1].split(' ')
+                    await message.channel.send('You current path is set to ```' + work_with[1] + '```')
+                except IndexError:
+                    await message.channel.send('You fudged up')
             elif len(work_with) >= 2:
                 try:
                     int(work_with[1])
@@ -183,15 +202,28 @@ async def send_secret():
         s.send(kudo.encode())
         secret = ''
 
+async def send_path():
+    global da_path
+    if da_path:
+        for item in da_path:
+            if item:
+                await da_channel.send('Moving ' + str(item))
+                kudo = item + '\r\n'
+                time.sleep(1)
+                s.send(kudo.encode())
+
 async def remove_claim():
-    global claimed, claim_user, claim_channel, running, server, port
+    global claimed, claim_user, claim_channel, running, server, port, secret, path
     claimed = False
     claim_user = 0
     claim_channel = 0
     running = False
     server = ''
+    path = ''
+    secret = ''
     port = 0
     s.close()
+
 
 mud_channel_category_name = 'muds'
 bot_id = 
