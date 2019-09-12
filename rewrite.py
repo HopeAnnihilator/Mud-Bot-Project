@@ -172,7 +172,12 @@ async def mudbot_connect(server, port):
     s.settimeout(0.5)
     print(server)
     print(port)
-    connect = s.connect((str(server), int(port)))
+    try: 
+        connect = s.connect((str(server), int(port)))
+    except ConnectionRefusedError:
+        await da_channel.send('Unable to connect')
+        await remove_claim()
+        return
     running = True
     await receive_info()
 
