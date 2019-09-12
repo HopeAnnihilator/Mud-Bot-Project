@@ -209,8 +209,23 @@ async def send_path():
             if item:
                 await da_channel.send('Moving ' + str(item))
                 kudo = item + '\r\n'
-                time.sleep(1)
                 s.send(kudo.encode())
+                while True:
+                    try:
+                        banner = s.recv(8192)
+                        print(str(banner))
+                        banner = banner.decode('utf-8','ignore')
+                        banner = re.sub(r".{0,3}m", '', str(banner))
+                        banner = re.sub(r".{0,1}38;5;208m", '', str(banner))
+                        banner = re.sub(r"\r\r\n", '\r\n', str(banner))
+                        banner = re.sub(r"VFE.{1}", '', str(banner))
+                        if banner:
+                            await da_channel.send('```' + banner + '```')
+                            print(banner)
+                    except socket.timeout:
+                        break
+                    time.sleep(1)
+        
 
 async def remove_claim():
     global claimed, claim_user, claim_channel, running, server, port, secret, path
@@ -223,7 +238,6 @@ async def remove_claim():
     secret = ''
     port = 0
     s.close()
-
 
 mud_channel_category_name = 'muds'
 bot_id = 
