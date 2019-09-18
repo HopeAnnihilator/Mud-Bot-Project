@@ -41,23 +41,38 @@ async def on_message(message):
         work_with = message.content.lower().split(' ')
         if "help" == work_with[1]:
             await message.channel.send(the_help)
+        elif "topic" == work_with[1]:
+            await message.channel.send(str(message.channel.topic))
         elif "create" == work_with[1] and "channel" == work_with[2] and str(type(message.channel)) == "<class 'discord.channel.TextChannel'>":
             if len(work_with) >= 4:
-                da_name = work_with[3] + '-' + str(message.author.id)
+                da_name = work_with[3]
                 channeled = await message.guild.fetch_channels()
+                x = 0
+                for channelo in message.guild.channels:
+                    if str(type(channelo)) == "<class 'discord.channel.CategoryChannel'>":
+                        continue
+                    else:
+                        y = str(channelo.topic).split(':')
+                        print(str(y))
+                        try:
+                            if str(message.author.id) == y[1]:
+                                await message.channel.send('You have already created the channel: ' + str(channelo))
+                                x = 1
+                        except IndexError:
+                            continue
                 if da_name in str(channeled):
                     await message.channel.send('That channel already exists, silly')
-                elif (str(message.author.id)) in str(channeled):
-                    await message.channel.send('You have already created a channel')
-                else:
-                    for categorie in message.guild.categories:
-                        if str(categorie).lower() == mud_channel_category_name.lower():
-                            await message.guild.create_text_channel(name = da_name, topic = 'Mud for ' + message.author.name, category = categorie, slowmode_delay = 1)
-            else:  
-                await message.channel.send('Please insert a channel name')
+                elif x == 0:
+                    try:
+                        for categorie in message.guild.categories:
+                            if str(categorie).lower() == mud_channel_category_name.lower():
+                                await message.channel.send('Channel created')
+                                await message.guild.create_text_channel(name = da_name, topic = 'Mud for ' + message.author.name + ':' + str(message.author.id), category = categorie, slowmode_delay = 1)
+                    except IndexError:  
+                        await message.channel.send('Please insert a channel name')
         elif "claim" == work_with[1]:
             if str(type(message.channel)) == "<class 'discord.channel.TextChannel'>":
-                chin_channel = str(message.channel).split('-')
+                chin_channel = str(message.channel.topic).split(':')
                 global claimed, claim_user, claim_channel, da_channel
                 if claimed and message.author.id != claim_user:
                     await message.channel.send('The bot is already claimed')
@@ -79,27 +94,30 @@ async def on_message(message):
             else:
                 await message.channel.send('Cannot claim this channel')
         elif "remove" == work_with[1] and str(type(message.channel)) == "<class 'discord.channel.TextChannel'>":
-            if "claim" == work_with[2]:
-                if (message.author.id == claim_user or "name='staff'" in str(message.author.roles).lower()):
-                    if claimed:
-                        await remove_claim()
-                    else:
-                        await message.channel.send('There are no active claims')
-                else:
-                    await message.channel.send('You are unable to remove claims')
-            elif "channel" == work_with[2]:
-                if "name='staff'" in str(message.author.roles).lower():
-                    if len(work_with) >= 4 and message.author.id == message.guild.owner.id:
-                        if work_with[3] == "all":
-                            for channel in message.guild.channels:
-                                await channel.delete()
+            try:
+                if "claim" == work_with[2]:
+                    if (message.author.id == claim_user or "name='staff'" in str(message.author.roles).lower()):
+                        if claimed:
+                            await remove_claim()
                         else:
-                            await message.channel.send('Sorry, no comprendo')                            
-                    await message.channel.delete()
-                elif str(message.author.id) in message.channel.name:
-                    await message.channel.delete()
-                else:
-                    await message.channel.send('Fuck off, you cant do that')
+                            await message.channel.send('There are no active claims')
+                    else:
+                        await message.channel.send('You are unable to remove claims')
+                elif "channel" == work_with[2]:
+                    if "name='staff'" in str(message.author.roles).lower():
+                        if len(work_with) >= 4 and message.author.id == message.guild.owner.id:
+                            if work_with[3] == "all":
+                                for channel in message.guild.channels:
+                                    await channel.delete()
+                            else:
+                                await message.channel.send('Sorry, no comprendo')                            
+                        await message.channel.delete()
+                    elif str(message.author.id) == message.channel.topic.split(':')[1]:
+                        await message.channel.delete()
+                    else:
+                        await message.channel.send('Fuck off, you cant do that')
+            except IndexError:
+                await message.channel.send('Sorry I do not understand')
         elif "connect" == work_with[1] and claimed and message.channel.id == claim_channel and message.author.id == claim_user and not running:
             global server, port
             await message.channel.send('Attempting to connect')
@@ -123,6 +141,7 @@ async def on_message(message):
                 await message.channel.send('Please mention a user')
         elif "path" == work_with[1] and (message.author.id == claim_user or str(message.author.id) in allowed_users) and running:
             await send_path()
+
 
     elif str(type(message.channel)).lower() == "<class 'discord.channel.dmchannel'>" and message.author.id != bot_id:
         if message.author.id == claim_user:
@@ -243,7 +262,7 @@ async def remove_claim():
     secret = ''
     port = 0
     s.close()
-
+    
 mud_channel_category_name = 'muds'
 bot_id = 
 token = ''
